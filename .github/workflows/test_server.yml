@@ -1,7 +1,7 @@
 name: Test GitHub Feedback
 
 on:
-  repository_dispatch:
+  repository_dispatch:  #gfg
     types: [trigger-test] # Lệnh này phải khớp với event_type trong file HTML
 
 jobs:
