@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 import os
 import time
 
-# Lấy thông tin từ GitHub Secrets (đã cấu hình trong file YAML)ggg
+# Lấy thông tin từ GitHub Secrets (đã cấu hình trong file YAML)gggfa
 MQTT_SERVER = os.getenv('f7a99425c8a34f23aba171e48336da3b.s1.eu.hivemq.cloud')
 MQTT_USER = os.getenv('long140203')
 MQTT_PASS = os.getenv('Long140203')
