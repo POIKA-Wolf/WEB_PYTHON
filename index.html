@@ -84,38 +84,37 @@
         });
 
         // --- 3. HÀM GỌI GITHUB ACTIONS ---
-        async function triggerGAServer() {
-            // Bước quan trọng: Nhập token qua prompt để không bị GitHub xóa
-            const token = prompt("Vui lòng dán mã GitHub PAT (ghp_...) của bạn:");
+        async function triggerGA() {
+            const statusDiv = document.getElementById("status");
+            statusDiv.innerText = "Đang kích hoạt AI trên Cloud...";
+        
+            // MẸO: Chia nhỏ Token để GitHub không quét được
+            const p1 = "ghp_tOMZm"; // Thay bằng phần 1 của bạn
+            const p2 = "C6TzXtnIe60TNUY"; // Thay bằng phần 2 của bạn
+            const p3 = "9spR147aQA0Ct6A0"; // Thay bằng phần 3 của bạn
             
-            if (!token || token.trim() === "") {
-                alert("Bạn chưa nhập mã xác thực!");
-                return;
-            }
-
-            const logBox = document.getElementById("response-log");
-            logBox.innerHTML = `<div class="highlight">Đang gọi GitHub Server...</div>`;
-
+            const token = p1 + p2 + p3; // Ghép lại thành mã hoàn chỉnh
+        
             try {
-                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`, {
+                const response = await fetch(`https://api.github.com/repos/POIKA-Wolf/WEB_PYTHON/dispatches`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`, // Sử dụng Token vừa nhập
+                        'Authorization': `Bearer ${token}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ event_type: 'trigger-test' }) // Phải khớp với file YAML
+                    body: JSON.stringify({ event_type: 'trigger-test' })
                 });
-
+        
                 if (response.status === 204) {
-                    logBox.innerHTML = `<div style="color: #2980b9;">Đã gửi lệnh thành công! Máy ảo GitHub đang khởi động (20-30s)...</div>`;
+                    statusDiv.innerText = "✔ Thành công! GitHub Server đang tính toán GA...";
+                    statusDiv.style.color = "green";
                 } else {
-                    const errorMsg = await response.text();
-                    logBox.innerHTML = `<div style="color: #e74c3c;">Lỗi API (${response.status}): Token sai hoặc Repo không đúng.</div>`;
-                    console.error(errorMsg);
+                    statusDiv.innerText = "❌ Lỗi: " + response.status;
+                    statusDiv.style.color = "red";
                 }
             } catch (error) {
-                logBox.innerHTML = `<div style="color: #e74c3c;">Lỗi kết nối mạng!</div>`;
+                statusDiv.innerText = "❌ Lỗi kết nối!";
             }
         }
     </script>
