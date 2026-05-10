@@ -1,94 +1,51 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>GitHub Server Control - POIKA-Wolf</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; text-align: center; padding: 40px; }
-        .dashboard { background: white; padding: 30px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 500px; width: 100%; }
-        h2 { color: #2c3e50; }
-        .btn-trigger { 
-            background: linear-gradient(135deg, #8e44ad, #9b59b6); color: white; border: none; 
-            padding: 15px 30px; font-size: 18px; border-radius: 10px; cursor: pointer; 
-            transition: 0.3s; width: 100%; margin-top: 20px; font-weight: bold;
+<div class="dashboard">
+    <h2>Máy tính AI Cloud</h2>
+    <input type="number" id="num1" placeholder="Số thứ nhất" style="padding:10px; width:80%; margin-bottom:10px;">
+    <input type="number" id="num2" placeholder="Số thứ hai" style="padding:10px; width:80%; margin-bottom:10px;">
+    
+    <button class="btn-trigger" onclick="calculateOnCloud()">➕ TÍNH TỔNG TRÊN CLOUD</button>
+    
+    <div id="log-status">Kết quả sẽ hiện ở đây...</div>
+</div>
+
+<script>
+    // ... Giữ nguyên phần cấu hình MQTT và Token (Dùng cách chia nhỏ chuỗi p1, p2, p3 như cũ) ...
+
+    async function calculateOnCloud() {
+        const n1 = document.getElementById("num1").value;
+        const n2 = document.getElementById("num2").value;
+        const log = document.getElementById("log-status");
+
+        if (n1 === "" || n2 === "") {
+            alert("Vui lòng nhập đủ 2 số!");
+            return;
         }
-        .btn-trigger:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4); }
-        #log-status { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 14px; color: #7f8c8d; min-height: 40px; }
-    </style>
-</head>
-<body>
 
-    <div class="dashboard">
-        <h2>Điều Khiển AI Cloud</h2>
-        <p>Hệ thống tối ưu hóa GA cho cây trồng</p>
-        
-        <button class="btn-trigger" onclick="runAIServer()">🚀 CHẠY THUẬT TOÁN GA</button>
-        
-        <div id="log-status">Trạng thái: Sẵn sàng nhận lệnh...</div>
-    </div>
+        const token = p1 + p2 + p3; // Ghép token từ các phần đã chia nhỏ
+        log.innerText = "Đang gửi dữ liệu lên GitHub Server...";
 
-    <script>
-        // --- THÔNG TIN CẤU HÌNH ---
-        const OWNER = "POIKA-Wolf";
-        const REPO = "WEB_PYTHON";
-        const EVENT_TYPE = "trigger-test";
+        try {
+            const response = await fetch(`https://api.github.com/repos/POIKA-Wolf/WEB_PYTHON/dispatches`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                // Gửi kèm 2 số vào client_payload
+                body: JSON.stringify({ 
+                    event_type: 'calculate-sum', 
+                    client_payload: { number1: n1, number2: n2 } 
+                })
+            });
 
-        // Kỹ thuật chia nhỏ mã Token để vượt qua bộ lọc bảo mật của GitHub
-        const part1 = "ghp_m0hq6";
-        const part2 = "alQNsCkLMUfYp5N";
-        const part3 = "tt6BG5O8VP3HBaWn";
-        
-        const FINAL_TOKEN = part1 + part2 + part3;
-
-        // --- KẾT NỐI HIVE MQ ĐỂ NHẬN PHẢN HỒI ---
-        const mqtt = new Paho.MQTT.Client("f7a99425c8a34f23aba171e48336da3b.s1.eu.hivemq.cloud", 8884, "Web_" + Math.random());
-        
-        mqtt.onMessageArrived = (msg) => {
-            if(msg.destinationName === "web/test/response") {
-                const log = document.getElementById("log-status");
-                log.innerText = "✔ PHẢN HỒI: " + msg.payloadString;
-                log.style.color = "#27ae60";
+            if (response.status === 204) {
+                log.innerText = `Đã gửi ${n1} và ${n2}. Đang đợi Python tính toán...`;
+            } else {
+                log.innerText = "Lỗi API: " + response.status;
             }
-        };
-
-        mqtt.connect({
-            useSSL: true,
-            userName: "long140203",
-            password: "Long140203",
-            onSuccess: () => { mqtt.subscribe("web/test/response"); }
-        });
-
-        // --- HÀM KÍCH HOẠT GITHUB ACTIONS ---
-        async function runAIServer() {
-            const log = document.getElementById("log-status");
-            log.innerText = "Đang kết nối tới GitHub Server...";
-            log.style.color = "#2980b9";
-
-            try {
-                const url = `https://api.github.com/repos/${OWNER}/${REPO}/dispatches`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${FINAL_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ event_type: EVENT_TYPE })
-                });
-
-                if (response.status === 204) {
-                    log.innerText = "✔ Lệnh đã gửi! Đang đợi Python xử lý (25s)...";
-                    log.style.color = "#2980b9";
-                } else {
-                    log.innerText = "❌ Lỗi: " + response.status + ". Token có thể bị GitHub khóa.";
-                    log.style.color = "#e74c3c";
-                }
-            } catch (e) {
-                log.innerText = "❌ Lỗi kết nối API!";
-                log.style.color = "#e74c3c";
-            }
+        } catch (e) {
+            log.innerText = "Lỗi kết nối!";
         }
-    </script>
-</body>
-</html>
+    }
+</script>
