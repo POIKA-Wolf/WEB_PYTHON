@@ -1,11 +1,11 @@
-name: Test GitHub Feedback
+name: Sum Calculator Server
 
 on:
   repository_dispatch:
-    types: [trigger-test]
+    types: [calculate-sum]
 
 jobs:
-  test_job:
+  calculate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,13 +16,15 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install MQTT Library
+      - name: Install dependencies
         run: pip install paho-mqtt
 
-      - name: Run Feedback Script
+      - name: Run Sum Script
         env:
-          # Các giá trị này bạn PHẢI điền vào phần Settings -> Secrets của Repo
+          # Lấy 2 số từ payload của Web gửi lên
+          INPUT_N1: ${{ github.event.client_payload.number1 }}
+          INPUT_N2: ${{ github.event.client_payload.number2 }}
           MQTT_SERVER: ${{ secrets.MQTT_SERVER }}
           MQTT_USER: ${{ secrets.MQTT_USER }}
           MQTT_PASS: ${{ secrets.MQTT_PASS }}
-        run: python test_feedback.py
+        run: python sum_script.py
