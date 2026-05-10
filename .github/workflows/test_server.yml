@@ -1,8 +1,8 @@
 name: Test GitHub Feedback
 
 on:
-  repository_dispatch:  #gfgdfa
-    types: [trigger-test] # Lệnh này phải khớp với event_type trong file HTML
+  repository_dispatch:
+    types: [trigger-test]
 
 jobs:
   test_job:
@@ -21,7 +21,7 @@ jobs:
 
       - name: Run Feedback Script
         env:
-          # Các biến này lấy từ GitHub Settings -> Secrets -> Actions
+          # Các giá trị này bạn PHẢI điền vào phần Settings -> Secrets của Repo
           MQTT_SERVER: ${{ secrets.MQTT_SERVER }}
           MQTT_USER: ${{ secrets.MQTT_USER }}
           MQTT_PASS: ${{ secrets.MQTT_PASS }}
