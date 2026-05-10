@@ -1,73 +1,56 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>GitHub Server Test</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f0f2f5; }
-        .box { background: white; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 8px; }
-        #status { margin-top: 20px; font-weight: bold; color: #2980b9; }
-    </style>
-</head>
-<body>
+<script>
+    // --- CẤU HÌNH API GITHUB ---
+    // LƯU Ý: Nếu lỗi 401, hãy tạo lại Token mới và kiểm tra quyền 'repo'
+    const GITHUB_AUTH = "Bearer ghp_TẠO_MÃ_MỚI_VÀ_DÁN_VÀO_ĐÂY"; 
+    const REPO_OWNER = "POIKA-Wolf";
+    const REPO_NAME = "WEB_PYTHON"; // Đảm bảo tên này khớp 100% với tên Repo trên GitHub
 
-    <div class="box">
-        <h2>Hệ thống Test GitHub Server</h2>
-        <button onclick="triggerGA()">BẬT ĐÈN TEST (GỌI PYTHON)</button>
-        <div id="status">Trạng thái: Đang chờ lệnh...</div>
-    </div>
-
-    <script>
-        // --- CẤU HÌNH API GITHUB ---
-        const GITHUB_AUTH = "Bearer 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"; 
-        const REPO_OWNER = "POIKA-Wolf";
-        const REPO_NAME = "WEB_PYTHON";
-
-        // --- CẤU HÌNH MQTT ---
-        const mqtt_client = new Paho.MQTT.Client("f7a99425c8a34f23aba171e48336da3b.s1.eu.hivemq.cloud", 8884, "Web_Test_" + Math.random());
-        
-        mqtt_client.onMessageArrived = (msg) => {
-            if(msg.destinationName === "web/test/response") {
-                document.getElementById("status").innerText = "✔ " + msg.payloadString;
-                document.getElementById("status").style.color = "green";
-            }
-        };
-
-        mqtt_client.connect({
-            useSSL: true,
-            userName: "long140203",
-            password: "Long140203",
-            onSuccess: () => { 
-                console.log("MQTT Connected"); 
-                mqtt_client.subscribe("web/test/response");
-            }
-        });
-
-        async function triggerGA() {
-            document.getElementById("status").innerText = "Đang kích hoạt GitHub Actions...";
-            
-            try {
-                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': GITHUB_AUTH,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ event_type: 'trigger-test' })
-                });
-
-                if (response.status === 204) {
-                    document.getElementById("status").innerText = "Đã gửi lệnh! Đang đợi máy ảo GitHub khởi động (khoảng 20s)...";
-                } else {
-                    document.getElementById("status").innerText = "Lỗi API: " + response.status;
-                }
-            } catch (error) {
-                document.getElementById("status").innerText = "Lỗi kết nối tới GitHub API!";
-            }
+    // --- CẤU HÌNH MQTT ---
+    const mqtt_client = new Paho.MQTT.Client("f7a99425c8a34f23aba171e48336da3b.s1.eu.hivemq.cloud", 8884, "Web_Test_" + Math.random());
+    
+    mqtt_client.onMessageArrived = (msg) => {
+        if(msg.destinationName === "web/test/response") {
+            const statusDiv = document.getElementById("status");
+            statusDiv.innerText = "✔ " + msg.payloadString;
+            statusDiv.style.color = "green";
         }
-    </script>
-</body>
-</html>
+    };
+
+    mqtt_client.connect({
+        useSSL: true,
+        userName: "long140203",
+        password: "Long140203",
+        onSuccess: () => { 
+            console.log("MQTT Connected"); 
+            mqtt_client.subscribe("web/test/response");
+        }
+    });
+
+    async function triggerGA() {
+        const statusDiv = document.getElementById("status");
+        statusDiv.innerText = "Đang kích hoạt GitHub Actions...";
+        statusDiv.style.color = "#2980b9";
+        
+        try {
+            const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': GITHUB_AUTH,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ event_type: 'trigger-test' })
+            });
+
+            if (response.status === 204) {
+                statusDiv.innerText = "Đã gửi lệnh! Đợi Python phản hồi (khoảng 20s)...";
+            } else {
+                statusDiv.innerText = "Lỗi API: " + response.status + " (Kiểm tra lại Token/Tên Repo)";
+                statusDiv.style.color = "red";
+            }
+        } catch (error) {
+            statusDiv.innerText = "Lỗi kết nối tới GitHub API!";
+            statusDiv.style.color = "red";
+        }
+    }
+</script>
